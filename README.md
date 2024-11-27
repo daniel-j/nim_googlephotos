@@ -4,6 +4,8 @@
 
 ## Usage
 
+See [tests/test_http.nim](tests/test_http.nim) for an example fetching from an online url.
+
 ```nim
 # create state object (ref object)
 let gphoto: GooglePhotos = newGooglePhotos()
