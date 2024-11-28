@@ -4,6 +4,12 @@ import googlephotos
 
 let gphoto = newGooglePhotos()
 
+var photos: seq[PhotoInfo]
+var albumInfo: AlbumInfo
+
+gphoto.photoCb = proc (photo: PhotoInfo) = photos.add(photo)
+gphoto.infoCb = proc (info: AlbumInfo) = albumInfo = info
+
 let client = newHttpClient()
 try:
   echo "fetching..."
@@ -13,5 +19,6 @@ try:
 finally:
   client.close()
 
-echo (gphoto.albumInfo.name, gphoto.photos.len, googlePhotoUrlSize(gphoto.photos[0].url, 1920, 1080))
-assert(gphoto.photos.len == gphoto.albumInfo.imageCount)
+echo (albumInfo.name, photos.len, googlePhotoUrlSize(photos[0].url, 1920, 1080))
+assert(photos.len == albumInfo.imageCount)
+photos.reset()

@@ -35,16 +35,14 @@ type
     shareUrl*: string
 
   GooglePhotos* = ref object
-    photos*: seq[PhotoInfo]
-    albumInfo*: AlbumInfo
+    photoCb*: proc (photo: PhotoInfo)
+    infoCb*: proc (info: AlbumInfo)
     state: ParseState
     str: string
 
 proc init*(self: GooglePhotos) =
   self.state = SeekPatternInitial
   self.str = ""
-  self.photos.setLen(0)
-  self.albumInfo.reset()
 
 proc newGooglePhotos*(): GooglePhotos =
   new(result)
@@ -82,7 +80,6 @@ proc parseHtml*(self: GooglePhotos; input: string): bool =
       linei.inc(le)
       self.str = self.str[(linei + static(($SeekPatternPhotos).len - 2)) .. ^1]
       self.state = ReadPhoto
-      self.photos.setLen(0)
       return self.parseHtml("")
 
   of ReadPhoto:
@@ -93,15 +90,16 @@ proc parseHtml*(self: GooglePhotos; input: string): bool =
     else:
       linei.inc(le)
       let photodata = self.str[0 ..< (linei + static(($ReadPhoto).len))]
-      let photoInfoJson = parseJson(photodata)
-      self.photos.add(PhotoInfo(
-        id: photoInfoJson[0].getStr(),
-        url: photoInfoJson[1][0].getStr(),
-        width: photoInfoJson[1][1].getInt(),
-        height: photoInfoJson[1][2].getInt(),
-        imageUpdateDate: photoInfoJson[2].getBiggestInt(),
-        albumAddDate: photoInfoJson[5].getBiggestInt()
-      ))
+      if not self.photoCb.isNil:
+        let photoInfoJson = parseJson(photodata)
+        self.photoCb(PhotoInfo(
+          id: photoInfoJson[0].getStr(),
+          url: photoInfoJson[1][0].getStr(),
+          width: photoInfoJson[1][1].getInt(),
+          height: photoInfoJson[1][2].getInt(),
+          imageUpdateDate: photoInfoJson[2].getBiggestInt(),
+          albumAddDate: photoInfoJson[5].getBiggestInt()
+        ))
       self.str = self.str[photodata.len .. ^1]
       if self.str[0] == ',':
         self.str = self.str[1 .. ^1]
@@ -127,24 +125,25 @@ proc parseHtml*(self: GooglePhotos; input: string): bool =
       discard
     else:
       linei.inc(le)
-      let albuminfo = self.str[0 ..< linei]
-      let albumInfoJson = parseJson(albumInfo)
-      self.albumInfo = AlbumInfo(
-        id: albumInfoJson[0].getStr(),
-        name: albumInfoJson[1].getStr(),
-        createdDate: albumInfoJson[2][0].getBiggestInt(), # maybe?
-        updatedDate: albumInfoJson[2][1].getBiggestInt(), # maybe?
-        downloadUrl: albumInfoJson[3].getStr(),
-        thumbnailUrl: albumInfoJson[4][0].getStr(),
-        thumbnailWidth: albumInfoJson[4][1].getInt(),
-        thumbnailHeight: albumInfoJson[4][2].getInt(),
-        authorName: albumInfoJson[5][11][0].getStr(),
-        authorAvatarUrl: albumInfoJson[5][12][0].getStr(),
-        imageCount: albumInfoJson[21].getInt(),
-        shareUrl: albumInfoJson[32].getStr()
-      )
-      self.str = ""
+      if not self.infoCb.isNil:
+        self.str.setLen(linei)
+        let albumInfoJson = parseJson(self.str)
+        self.infoCb(AlbumInfo(
+          id: albumInfoJson[0].getStr(),
+          name: albumInfoJson[1].getStr(),
+          createdDate: albumInfoJson[2][0].getBiggestInt(), # maybe?
+          updatedDate: albumInfoJson[2][1].getBiggestInt(), # maybe?
+          downloadUrl: albumInfoJson[3].getStr(),
+          thumbnailUrl: albumInfoJson[4][0].getStr(),
+          thumbnailWidth: albumInfoJson[4][1].getInt(),
+          thumbnailHeight: albumInfoJson[4][2].getInt(),
+          authorName: albumInfoJson[5][11][0].getStr(),
+          authorAvatarUrl: albumInfoJson[5][12][0].getStr(),
+          imageCount: albumInfoJson[21].getInt(),
+          shareUrl: albumInfoJson[32].getStr()
+        ))
       self.state = Complete
+      self.str = ""
       return self.parseHtml("")
 
   of Complete:
