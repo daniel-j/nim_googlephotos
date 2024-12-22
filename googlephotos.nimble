@@ -1,6 +1,6 @@
 # Package
 
-version       = "0.1.0"
+version       = "0.2.0"
 author        = "djazz"
 description   = "Fetch info and photos from a Google Photos public share url"
 license       = "MIT"
