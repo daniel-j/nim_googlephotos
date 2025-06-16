@@ -7,13 +7,11 @@ let gphoto = newGooglePhotos()
 var photos: seq[PhotoInfo]
 var albumInfo: AlbumInfo
 
-gphoto.photoCb = proc (photo: PhotoInfo) =
-  echo photo
-  photos.add(photo)
+gphoto.photoCb = proc (photo: PhotoInfo) = photos.add(photo)
 gphoto.infoCb = proc (info: AlbumInfo) = albumInfo = info
 
 # parse in string chunks
-let html = readFile("tests/album.html")
+let html = readFile("tests/album2.html")
 var pos = 0
 const chunkSize = 80
 while pos <= html.len and gphoto.parseHtml(html[pos ..< min(pos + chunkSize, html.len)]):
@@ -31,7 +29,7 @@ photos.reset()
 
 # parse from stream (chunked read)
 gphoto.init()
-let s = newFileStream("tests/album.html")
+let s = newFileStream("tests/album2.html")
 try:
   assert(false == gphoto.parseHtml(s))
 finally:

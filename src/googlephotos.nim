@@ -7,7 +7,7 @@ type
     Invalid
     SeekPatternInitial = "id=\"_ij\""
     SeekPatternPhotos = "data:[null,[[\""
-    ReadPhoto = "\"]}]"
+    ReadPhoto = "]}]"
     SeekPatternAlbumInfo = "[\""
     ReadAlbumInfo = ",null,0], sideChannel"
     Complete
